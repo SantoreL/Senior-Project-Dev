@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+/>
+<html>
+  <head>
+    <title>Setup - Spotify Copyright Checker</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #1db954 0%, #191414 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+      .container {
+        background: white;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        max-width: 600px;
+        width: 100%;
+      }
+      h1 {
+        color: #191414;
+        margin-bottom: 10px;
+        font-size: 2em;
+      }
+      .subtitle {
+        color: #666;
+        margin-bottom: 30px;
+      }
+      .step {
+        background: #f5f5f5;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border-left: 4px solid #1db954;
+      }
+      .step-number {
+        background: #1db954;
+        color: white;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 10px;
+      }
+      .step-title {
+        font-weight: bold;
+        margin-bottom: 10px;
+        font-size: 18px;
+      }
+      .step-content {
+        color: #555;
+        line-height: 1.6;
+      }
+      .step-content a {
+        color: #1db954;
+        text-decoration: none;
+        font-weight: bold;
+      }
+      .step-content a:hover {
+        text-decoration: underline;
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        color: #333;
+        font-weight: bold;
+      }
+      input[type="text"],
+      input[type="password"] {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+      }
+      input:focus {
+        outline: none;
+        border-color: #1db954;
+      }
+      .btn {
+        background: #1db954;
+        color: white;
+        border: none;
+        padding: 15px 40px;
+        border-radius: 30px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        width: 100%;
+      }
+      .btn:hover {
+        background: #1ed760;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(29, 185, 84, 0.4);
+      }
+      .info-box {
+        background: #e8f5e9;
+        border-left: 4px solid #1db954;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 5px;
+      }
+      .warning-box {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 5px;
+      }
+      .code {
+        background: #f5f5f5;
+        padding: 3px 8px;
+        border-radius: 3px;
+        font-family: monospace;
+        color: #d63384;
+      }
+      .error {
+        color: #dc3545;
+        background: #f8d7da;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+      }
+      .success {
+        color: #155724;
+        background: #d4edda;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+      }
+      .dashboard-btn {
+        position: fixed;
+        color: white;
+        top: 20px;
+        left: 20px;
+        z-index: 1000;
+      }
+    </style>
+  </head>
+  <body>
+    <a href="/dashboard" class="dashboard-btn"
+      ><i class="fa-solid fa-backward-step"></i
+    ></a>
+    <div class="container">
+      <h1>🔧 Setup Spotify App</h1>
+      <p class="subtitle">Configure your Spotify Developer credentials</p>
+
+      {% if error %}
+      <div class="error">{{ error }}</div>
+      {% endif %}
+
+      <div class="step">
+        <div class="step-title">
+          <span class="step-number">1</span>
+          Create a Spotify Developer App
+        </div>
+        <div class="step-content">
+          1. Go to
+          <a href="https://developer.spotify.com/dashboard" target="_blank"
+            >Spotify Developer Dashboard</a
+          ><br />
+          2. Click <strong>"Create app"</strong><br />
+          3. Fill in:
+          <ul style="margin-left: 20px; margin-top: 10px">
+            <li><strong>App name:</strong> Spotify Copyright Checker</li>
+            <li>
+              <strong>Redirect URI:</strong>
+              <span class="code">http://127.0.0.1:5000/callback</span>
+            </li>
+          </ul>
+          4. Click <strong>"Save"</strong>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-title">
+          <span class="step-number">2</span>
+          Get Your Credentials
+        </div>
+        <div class="step-content">
+          1. On your app's page, click <strong>"Settings"</strong><br />
+          2. Copy your <strong>Client ID</strong><br />
+          3. Click <strong>"View client secret"</strong> and copy it
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-title">
+          <span class="step-number">3</span>
+          Enter Your Credentials Below
+        </div>
+        <div class="step-content">
+          <form method="POST" action="/setup">
+            <div class="form-group">
+              <label for="client_id">Client ID</label>
+              <input
+                type="text"
+                id="client_id"
+                name="client_id"
+                required
+                placeholder="e.g., 6732f7efa12b49ffa356b88586e9671e"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="client_secret">Client Secret</label>
+              <input
+                type="password"
+                id="client_secret"
+                name="client_secret"
+                required
+                placeholder="Enter your client secret"
+              />
+            </div>
+
+            <div class="warning-box">
+              ⚠️ <strong>Important:</strong> Your credentials will be stored
+              locally in <span class="code">spotify_config.json</span>. Keep
+              this file secure and don't share it publicly.
+            </div>
+
+            <button type="submit" class="btn">Save & Continue</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="info-box">
+        💡 <strong>Tip:</strong> Make sure to add
+        <span class="code">http://127.0.0.1:5000/callback</span>
+        to your Spotify app's Redirect URIs in the dashboard!
+      </div>
+    </div>
+  </body>
+</html>

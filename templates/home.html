@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Spotify Copyright Checker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1DB954 0%, #191414 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            color: #191414;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .spotify-btn {
+            background: #1DB954;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+        }
+        .spotify-btn:hover {
+            background: #1ed760;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(29, 185, 84, 0.4);
+        }
+        .secondary-btn {
+            background: #666;
+        }
+        .secondary-btn:hover {
+            background: #777;
+        }
+        .features {
+            text-align: left;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #eee;
+        }
+        .feature {
+            margin: 15px 0;
+            color: #333;
+        }
+        .feature::before {
+            content: "✓";
+            color: #1DB954;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Spotify Copyright Checker</h1>
+        <p class="subtitle">Check copyright information for any Spotify content</p>
+        
+        <a href="/login" class="spotify-btn">Connect with Spotify</a>
+        <a href="/setup" class="spotify-btn secondary-btn">⚙️ Settings</a>
+        
+        <div class="features">
+            <div class="feature">Check albums, tracks, and playlists</div>
+            <div class="feature">View your saved tracks</div>
+            <div class="feature">Search and analyze any song</div>
+            <div class="feature">100% free and secure</div>
+        </div>
+    </div>
+</body>
+</html>
