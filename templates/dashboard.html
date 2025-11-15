@@ -168,12 +168,14 @@
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 2000;
         }
         .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: #1DB954; color: #191414; }
         .modal-body { padding: 20px; background: #2a2a2a; }
         .modal-close { background: transparent; border: none; font-size: 20px; cursor: pointer; color: #191414; }
         .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         .detail-box { background: #333; padding: 12px; border-radius: 8px; }
+        #bookmarkBtn { position: relative; z-index: 3000; pointer-events: auto; background: red !important;}
     </style>
 </head>
 <body>
@@ -404,6 +406,7 @@
                 .then(r => r.json())
                 .then(data => {
                     if (data.error) { content.innerHTML = 'Error: ' + data.error; return; }
+                    window.currentSongFullData = data;
                     title.textContent = `${data.track.name} — ${data.track.artist}`;
                     const l = data.license;
                     const badge = `<span class="license-badge ${l.is_free ? 'license-ok' : 'license-bad'}">${l.is_free ? '✓ Copyright-free (heuristic)' : '✕ Likely copyrighted'}</span>`;
@@ -420,7 +423,7 @@
                     }
                     content.innerHTML = `
                         <div style="margin-bottom: 10px; display:flex; gap:10px; align-items:center;">${badge}<span style="font-size:12px; color:#aaa;">Conf: ${l.confidence}</span>
-                            <button style="margin-left: auto; box-sizing: 20px; background-color: transparent; border: none; cursor: pointer;"> <i class="fas fa-bookmark" style="color: white; font-size: 24px;"></i> </button>  
+                            <button class="bookmarkBtn" style="margin-left: auto; box-sizing: 20px; background-color: transparent; border: none; cursor: pointer;"> <i class="fas fa-bookmark" style="color: white; font-size: 24px;"></i> </button>  
                             </div>
                         <div class="details-grid">
                             <div class="detail-box">
@@ -449,8 +452,62 @@
             document.getElementById('modalOverlay').style.display = 'none';
         }
 
+        document.addEventListener("click", function (e) {
+            if (e.target.closest(".bookmarkBtn")) {
+                console.log("Bookmark clicked!");
+                bookmarkCurrentSong();
+            }
+        });
 
+        function bookmarkCurrentSong() {
+            if (!window.currentSongFullData) {
+                alert("No song information available.");
+                return;
+            }
 
+            const payload = formatSongForDB(window.currentSongFullData);
+
+            fetch("/api/bookmark", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    alert("Song saved!");
+                } else {
+                    alert("Error: " + d.error);
+                }
+            })
+            .catch(err => alert("Error: " + err));
+        }
+
+        function formatSongForDB(data) {
+            return {
+                name: data.track.name,
+                artist: data.track.artist,
+                album: data.album.name,
+                release_date: data.album.release_date,
+                length: msToTime(data.track.duration_ms),
+                cover_url: data.album.images?.[0]?.url || null,
+                publisher: data.album.label || null,
+                cr_year: data.album.release_date?.substring(0,4) || null,
+                license: data.license.is_free ? "free use" : "copyrighted",
+                copyright: (data.album.copyrights || [])
+                    .map(c => c.text)
+                    .join("; ")
+            };
+        }
+
+        function msToTime(ms) {
+            if (!ms) return null;
+            const sec = Math.floor(ms / 1000);
+            const h = String(Math.floor(sec / 3600)).padStart(2, "0");
+            const m = String(Math.floor((sec % 3600) / 60)).padStart(2, "0");
+            const s = String(sec % 60).padStart(2, "0");
+            return `${h}:${m}:${s}`;
+        }
     </script>
 </body>
 </html>

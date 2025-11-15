@@ -5,6 +5,7 @@ import secrets
 import os
 import json
 import re
+from database import insert_data
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
@@ -193,6 +194,15 @@ def logout():
     session.pop('access_token', None)
     return redirect('/')
 
+@app.route('/api/bookmark', methods=['POST'])
+def bookmark_song():
+    data = request.json
+    if not data:
+        return jsonify({"error": "No song data provided"})
+    
+    insert_data(data)
+
+    return jsonify({"success": True})
 
 @app.route('/bookmarked')
 def bookmarked():
@@ -462,6 +472,26 @@ def track_details():
         ' '.join([c.get('text', '') for c in album.get('copyrights', [])])
     )
 
+    '''
+    duration_ms = track.get('duration_ms', 0)
+    seconds = duration_ms // 1000
+    minutes = seconds // 60
+    hours = minutes // 60
+    length_time = f"{hours:02d}:{minutes % 60:02d}:{seconds % 60:02d}"
+
+    # Extract copyright year
+    cr_year = None
+    release_date = album.get('release_date')
+    if release_date:
+        cr_year = release_date[:4]   # "2020-03-18" → "2020"
+
+    # Combine copyright texts
+    copyright_list = album.get('copyrights', [])
+    copyright_text = " | ".join(
+        c.get('text', '') for c in copyright_list if 'text' in c
+    )
+    '''
+
     # Determine if audio features actually contain data
     af = {
         'tempo': features.get('tempo'),
@@ -471,6 +501,22 @@ def track_details():
         'energy': features.get('energy')
     }
     af['_has_data'] = any(v is not None for v in af.values() if not isinstance(v, bool))
+    '''
+    data = {
+        'name': track['name'],
+        'artist': artists[0]['name'] if artists else '',
+        'album': album.get('name'),
+        'release_date': album.get('release_date'),
+        'length': length_time,
+        'cover_url': track['album']['images'][0]['url'],
+        'publisher': album.get('label'),
+        'cr_year': cr_year,
+        'license': 'free use' if license_check['is_free'] else 'copyrighted',
+        'copyright': copyright_text,
+    }
+
+    insert_data(data)
+    '''
 
     return jsonify({
         'track': {
