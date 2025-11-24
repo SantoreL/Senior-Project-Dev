@@ -200,18 +200,13 @@ def bookmarked():
         return redirect('/')
     return render_template('bookmarked.html')
 
-def make_spotify_request(endpoint, method='GET',params=None): # if no method default is get 
+def make_spotify_request(endpoint, params=None):
     if 'access_token' not in session:
         return None
     
     headers = {'Authorization': f"Bearer {session['access_token']}"}
     url = f"https://api.spotify.com/v1/{endpoint}"
-    
-    if method == 'GET':
-        response = requests.get(url, headers=headers, params=params)
-    elif method == 'POST':
-        response = requests.post(url, headers=headers, json=json)
-    # response = requests.get(url, headers=headers, params=params)
+    response = requests.get(url, headers=headers, params=params)
     
     if response.status_code == 200:
         return response.json()
@@ -496,54 +491,17 @@ def track_details():
         'license': license_check
     })
 
-
-
-# create playlist 
-# add to playlist 
-@app.route('/api/add-playlist-items', methods=['POST'])
-def add_track():
-    
-    # POST add to their playlist, used to save from front end 
-    track_id = request.args.get('track_id')
-    playlist_id = request.json.get('playlist_id')
-    if not playlist_id:
-        return jsonify({'error': 'No track_id provided'})
-     
-    uri = f"spotify:track:{track_id}"
-
-    result = make_spotify_request(
-        f'playlists/{playlist_id}/tracks',
-        method='POST',
-        json={'uris': [uri]}
-    )
-
-    
-    return jsonify({'playlist': result})
-    
-# delete from 
-@app.route('/api/delete-playlist-items')
-def remove_track():
-    playlist_id = request.args.get('playlist_id')
-    if not playlist_id:
-        return jsonify({'error': 'No playlist_id provided'})
-
-    
-    # remove from their playlist 
-    playlist = make_spotify_request(f'/playlists/{playlist_id}/tracks')
-
-
-
 if __name__ == '__main__':
     print("=" * 60)
-    print("Spotify Copyright Checker Web App")
+    print("🚀 Spotify Copyright Checker Web App")
     print("=" * 60)
-    print("\n NEW: Setup page included!")
+    print("\n✨ NEW: Setup page included!")
     print("   No need to edit the script - configure through the web interface!")
-    print("\n📝Setup Instructions:")
+    print("\n📝 Setup Instructions:")
     print("1. Open browser to: http://127.0.0.1:5000")
     print("2. Click 'Settings' button")
     print("3. Follow the setup wizard")
-    print("\n Make sure to add this redirect URI to Spotify Dashboard:")
+    print("\n⚙️ Make sure to add this redirect URI to Spotify Dashboard:")
     print("   http://127.0.0.1:5000/callback")
     print("=" * 60)
     print()
