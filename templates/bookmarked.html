@@ -1,158 +1,78 @@
 <!DOCTYPE html>
 <html>
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-  />
   <head>
-    <style>
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          sans-serif;
-        background: #191414;
-      }
-
-      .container-title {
-        padding-top: 30px;
-        color: white;
-      }
-      .container {
-        padding-top: 25px;
-        background-color: #282828;
-        border-radius: 10px;
-        height: 500px;
-      }
-      .nav {
-        top: 0;
-        width: 100%;
-        height: 10vh;
-        z-index: 100;
-
-        display: flex;
-        align-items: center;
-        font-size: 2em;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          sans-serif;
-      }
-      .dashboard-btn {
-        display: inline-block;
-        padding: 10px 20px;
-        background-color: #333;
-        color: white;
-        text-decoration: none;
-        border-radius: 5px;
-        font-weight: 100;
-        text-align: center;
-        border-radius: 30px;
-        cursor: pointer;
-      }
-      .settings-btn {
-        position: absolute;
-        right: 20px;
-        color: white;
-        text-decoration: none;
-      }
-      .track {
-        background: #333;
-        padding: 15px;
-        border-radius: 5px;
-        margin: 10px 15px;
-        box-sizing: border-box;
-        border-radius: 12px;
-      }
-      .track-name {
-        font-weight: bold;
-        color: white;
-        font-size: 18px;
-      }
-      .track-artist {
-        color: #aaa;
-        margin: 5px 0;
-      }
-
-      /* Modal */
-      .modal-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.6);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-      }
-      .modal {
-        background: #222;
-        color: #fff;
-        width: 90%;
-        max-width: 800px;
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-      }
-      .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 16px 20px;
-        background: #1db954;
-        color: #191414;
-      }
-      .modaltitle {
-        font-size: 40px;
-      }
-      .modal-body {
-        padding: 20px;
-        background: #2a2a2a;
-      }
-      .modal-close {
-        background: transparent;
-        border: none;
-        font-size: 20px;
-        cursor: pointer;
-        color: #191414;
-      }
-      .details-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-      }
-      .detail-box {
-        background: #333;
-        padding: 12px;
-        border-radius: 8px;
-      }
-    </style>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/static/dashboard.css" />
+    <link rel="stylesheet" href="/static/bookmark.css"/>
+   
     <div class="nav">
       <a href="/dashboard" class="dashboard-btn">Dashboard</a>
-      <a href="/setup" class="settings-btn"
-        ><i class="fa-duotone fa-regular fa-gear"></i
-      ></a>
+      <div style="row-gap: 10px; margin-left: auto; margin-right: 10px">
+        <a
+          id="bookmarkedBackBtn"
+          href="/bookmarked"
+          class="settings-btn"
+          style="display: none"
+          >Back</a
+        >
+        <a href="/setup" class="settings-btn"> Settings </a>
+      </div>
     </div>
   </head>
   <body>
-    <div class="container-title">
-      <div class="container" style="gap: 200px">
-        <span
-          style="
-            font-size: 25px;
-            margin-left: 20px;
-            display: block;
-            margin-bottom: 20px;
-          "
-          >My Saved Songs
-          <select
-            id="myDropdown"
-            style="font-size: 20px; position: absolute; right: 20px"
-            onchange="handleSort(this.value)"
-          >
-            <option value="sort_by">Sort By</option>
-            <option value="release_date">Release Date</option>
-            <option value="recent_release">Most Recent Release Date</option>
-          </select>
-        </span>
+    
 
-        <div id="trackList"></div>
+    <!-- check copyright expects to see these but we're not using the dropdown on this page-->
+    <input type="hidden" id="checkType" value="myplaylists" />
+    <input type="hidden" id="urlInput" value="" />
+    <input type="hidden" id="limitValue" value="20" />
+    <input type="hidden" id="rangeStart" value="" />
+    <input type="hidden" id="rangeEnd" value="" />
+
+    <div class="playlist-controls">
+      <button id="createButton" onclick="createPlaylist()">
+        Create New Playlist
+      </button>
+      <input
+        id="playlistName"
+        type="text"
+        placeholder="New playlist name"
+        style="display: none"
+      />
+      <button
+        id="submitButton"
+        onclick="submitNewPlaylist()"
+        style="display: none"
+      >
+        Submit New Playlist
+      </button>
+      <button
+        id="cancelCreateButton"
+        onclick="cancelCreatePlaylist()"
+        style="display: none"
+      >
+        Cancel
+      </button>
+
+      <div id="sortDropdown" style="display: none">
+        <select onchange="handleSort(this.value)">
+          <option value="sort_by">Sort By</option>
+          <option value="release_date">Oldest Release Date</option>
+          <option value="recent_release">Most Recent Release Date</option>
+        </select>
       </div>
+    </div>
+    <div id="loading" style="display: none">Loading ...</div>
+
+    
+    <div id="playlistSelect" class="playlist-list" style="height: 800px;"></div>
+
+    <div class="results" id="results">
+      <h2 id="resultsTitle"></h2>
+      <div id="trackList"></div>
     </div>
 
     <div id="modalOverlay" class="modal-overlay" onclick="closeModal(event)">
@@ -166,162 +86,170 @@
         </div>
       </div>
     </div>
+
+    <div
+      id="playlistModalOverlay"
+      class="modal-overlay"
+      style="display: none"
+      onclick="closePlaylistModal(event)"
+    >
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <div id="playlistModalTitle">Select Playlist</div>
+          <button class="modal-close" onclick="closePlaylistModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="playlistModalBody">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/playlistutil.js"></script>
+
+    <script>
+      // override the selectPlaylist function for this page bc it's not displaying the smae as the other page
+      function selectPlaylist(playlistId, playlistName) {
+        selectedPlaylistId = playlistId;
+        document.getElementById("playlistSelect").style.display = "none";
+
+        const sd = document.getElementById("sortDropdown");
+        if (sd) sd.style.display = "block";
+
+        const backBtn = document.getElementById("bookmarkedBackBtn");
+        if (backBtn) backBtn.style.display = "inline-block";
+        checkCopyright();
+      }
+
+      function showPlaylistView() {
+        document.getElementById("playlistSelect").style.display = "block";
+        document.getElementById("results").style.display = "none";
+        selectedPlaylistId = null;
+        // hide sort dropdown when returning to playlist list
+        const sd = document.getElementById("sortDropdown");
+        if (sd) sd.style.display = "none";
+        // hide the back button when showing playlist list
+        const backBtn = document.getElementById("bookmarkedBackBtn");
+        if (backBtn) backBtn.style.display = "none";
+      }
+
+      function createPlaylist() {
+        document.getElementById("createButton").style.display = "none";
+        document.getElementById("playlistName").style.display = "block";
+        document.getElementById("submitButton").style.display = "block";
+        document.getElementById("cancelCreateButton").style.display = "block";
+      }
+
+      function cancelCreatePlaylist() {
+        document.getElementById("playlistName").style.display = "none";
+        document.getElementById("submitButton").style.display = "none";
+        document.getElementById("cancelCreateButton").style.display = "none";
+
+        document.getElementById("playlistName").value = "";
+        document.getElementById("createButton").style.display = "block";
+      }
+
+      function submitNewPlaylist() {
+        const name = document.getElementById("playlistName").value;
+
+        fetch("/api/create-playlist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: name,
+            description: "Created with my app",
+            public: false,
+          }),
+        })
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.error) {
+              alert("Error: " + data.error);
+              return;
+            }
+
+            alert("Playlist created!");
+
+            document.getElementById("playlistName").style.display = "none";
+            document.getElementById("submitButton").style.display = "none";
+            document.getElementById("playlistName").value = "";
+            document.getElementById("createButton").style.display = "block";
+          });
+        //rerender with new playlist **need to fix because it's not rerendering**
+        document.addEventListener("DOMContentLoaded", () => {
+          loadMyPlaylists();
+        });
+      }
+
+      // sort drop down options
+      function handleSort(sortType) {
+        if (sortType === "release_date") {
+          sortByReleaseLH();
+        } else if (sortType === "recent_release") {
+          sortByMostRecentRelease();
+        }
+      }
+
+      function sortByReleaseLH() {
+        const sortedList = [...trackList].sort(
+          (a, b) => new Date(a.release_date) - new Date(b.release_date)
+        );
+        displaySortedTracks(sortedList);
+      }
+
+      function sortByMostRecentRelease() {
+        const sortedList = [...trackList].sort(
+          (a, b) => new Date(b.release_date) - new Date(a.release_date)
+        );
+        displaySortedTracks(sortedList);
+      }
+
+      // same as check copyright but we dont modify original playlist, just the UI
+      function displaySortedTracks(sortedList) {
+        let html = "";
+        sortedList.forEach((track) => {
+          html += `
+            <div class="track" onclick="openTrackDetails('${track.id}')">
+              <div class="track-name">${track.name}</div>
+              <button onclick="event.stopPropagation(); addTrack('${
+                track.id
+              }')" 
+                      style="margin-left: auto; background-color: transparent; border: none; cursor: pointer; padding: 8px;">
+                <i class="fas fa-bookmark" style="color: white; font-size: 24px;"></i>
+              </button>
+              <div class="track-artist">${track.artist}</div>
+              <div style="display:flex; gap:10px; align-items:center; margin-top:8px; flex-wrap: wrap;">
+                <span class="license-badge ${
+                  track.license?.is_free ? "license-ok" : "license-bad"
+                }">
+                  ${
+                    track.license?.is_free
+                      ? "Copyright-free (heuristic)"
+                      : "Likely copyrighted"
+                  }
+                </span>
+                <span style="font-size:12px; color:#aaa;">Conf: ${
+                  track.license?.confidence ?? 0
+                }</span>
+              </div>
+              <div class="copyright">
+                ${
+                  track.copyrights.length > 0
+                    ? track.copyrights
+                        .map((c) => `${c.type}: ${c.text}`)
+                        .join("<br>")
+                    : "No copyright information found"
+                }
+              </div>
+            </div>
+          `;
+        });
+        document.getElementById("trackList").innerHTML = html;
+      }
+
+      // initialized on first load
+      window.onload = function () {
+        loadMyPlaylists();
+      };
+    </script>
   </body>
 </html>
-
-<script>
-  // fake data generated by AI to
-  const trackList = [
-    {
-      id: 1,
-      name: "Neon Skyline",
-      artist: "Luna Vale",
-      album: "City Lights",
-      genre: "Indie Pop",
-      release_date: "2021-06-18",
-      length: "00:03:42",
-      producer: "A. Mercer",
-      publisher: "Aurora Records",
-      cr_year: "2021-06-18",
-      License: "All Rights Reserved",
-      copyright: "© 2021 Aurora Records",
-    },
-    {
-      id: 2,
-      name: "Midnight Compass",
-      artist: "The Marlowe Project",
-      album: "Northbound",
-      genre: "Alternative Rock",
-      release_date: "2019-11-08",
-      length: "00:04:12",
-      producer: "S. Hargrove",
-      publisher: "Marlowe Music",
-      cr_year: "2019-11-08",
-      License: "All Rights Reserved",
-      copyright: "© 2019 Marlowe Music",
-    },
-    {
-      id: 3,
-      name: "Lazy Afternoon",
-      artist: "Celia & Co.",
-      album: "Porchlight Sessions",
-      genre: "Folk",
-      release_date: "2018-04-20",
-      length: "00:02:58",
-      producer: "C. Delgado",
-      publisher: "Sunbeam Publishing",
-      cr_year: "2018-04-20",
-      License: "Creative Commons - CC BY-NC",
-      copyright: "© 2018 Sunbeam Publishing",
-    },
-    {
-      id: 4,
-      name: "Pulse Drive",
-      artist: "Vector Five",
-      album: "Neon Circuit",
-      genre: "Synthwave",
-      release_date: "2022-01-07",
-      length: "00:05:05",
-      producer: "K. Ito",
-      publisher: "RetroPulse",
-      cr_year: "2022-01-07",
-      License: "All Rights Reserved",
-      copyright: "© 2022 RetroPulse",
-    },
-    {
-      id: 5,
-      name: "Quiet Storm",
-      artist: "Maris Vale",
-      album: "Under the Bridge",
-      genre: "R&B",
-      release_date: "2020-09-30",
-      length: "00:03:26",
-      producer: "P. Santos",
-      publisher: "Blue Harbor Music",
-      cr_year: "2020-09-30",
-      License: "All Rights Reserved",
-      copyright: "© 2020 Blue Harbor Music",
-    },
-  ];
-
-  function handleSort(sortType) {
-    if (sortType === "release_date") {
-      sortByReleaseLH();
-    }
-    else if (sortType === "recent_release"){
-        sortByMostRecentRelease()
-    }
-    
-  }
-  function sortByReleaseLH() {
-    const sortedList = [...trackList].sort(
-      (a, b) => new Date(a.release_date) - new Date(b.release_date)
-    );
-    console.log(sortedList);
-    displayUserSongs(sortedList);
-
-  }
-  function sortByMostRecentRelease(){
-    const sortedList = [...trackList].sort(
-      (a, b) => new Date(b.release_date) - new Date(a.release_date)
-    );
-    console.log(sortedList);
-    displayUserSongs(sortedList);
-  }
-
-  // loop through each song in a list and show it on the screen
-  // make database call to retrieve all of a users songs,
-  // then for each song give it a specific container to fill on page
-  function displayUserSongs(trackList) {
-    let html = "";
-    trackList.forEach((track) => {
-      html += `
-            <div class="track" onclick="openTrackDetails('${track.id}')"> 
-            <div class="track-name">${track.name}</div>
-            <div class="track-artist">${track.artist}</div>
-            <div style="display:flex; gap:10px; align-items:center; margin-top:8px; flex-wrap: wrap;">
-            </div>
-            </div>
-            `;
-    });
-    document.getElementById("trackList").innerHTML = html;
-  }
-
-  window.onload = function () {
-    displayUserSongs(trackList);
-  };
-
-  function openTrackDetails(trackId) {
-    const overlay = document.getElementById("modalOverlay");
-    const content = document.getElementById("modalContent");
-    const title = document.getElementById("modalTitle");
-    const track = trackList.find((t) => t.id == trackId);
-    const modal = document.getElementById("modalContent");
-    overlay.style.display = "flex";
-
-    modal.innerHTML = `
-    <h2>${track.name}</h2>
-    <div style=" background: rgb(51, 51, 51);
-        padding: 5px;
-        border-radius: 5px;
-        margin: 10px 10px;
-        box-sizing: border-box;"> 
-    <p> Artist: ${track.artist}</p>
-    <p> Album: ${track.album}</p>
-    <p> Genre: ${track.genre}</p>
-    <p> Release Date: ${track.release_date}</p>
-    <p> Length: ${track.length}</p>
-    <p> Producer: ${track.producer}</p>
-    <p> Publisher: ${track.publisher}</p>
-    <p> License: ${track.License}</p>
-    <p> Copyright: ${track.copyright}</p>
-    </div>
-  `;
-
-    document.getElementById("modalOverlay").style.display = "flex";
-  }
-
-  function closeModal() {
-    document.getElementById("modalOverlay").style.display = "none"; // hides it again
-  }
-</script>

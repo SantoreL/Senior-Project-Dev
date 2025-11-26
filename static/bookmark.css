@@ -1,0 +1,124 @@
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #191414;
+  color: white;
+}
+
+.container {
+  background: #282828;
+  padding: 30px;
+  border-radius: 10px;
+  margin-bottom: 30px;
+}
+
+.nav {
+  top: 0;
+  width: 100%;
+  height: 10vh;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  font-size: 2em;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.dashboard-btn {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #333;
+  color: white;
+  text-decoration: none;
+  border-radius: 30px;
+  /* font-weight: 100; */
+  text-align: center;
+  cursor: pointer;
+}
+
+.settings-btn {
+  background: #1db954;
+  color: white;
+  border: none;
+  padding: 15px 40px;
+  border-radius: 30px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
+  margin-left: auto;
+  margin-right: 10px;
+}
+
+#createButton,
+#submitButton {
+  background-color: #1db954;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  height: 42px; /* Add fixed height */
+  min-width: 180px; /* Add minimum width */
+}
+
+#playlistName {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #444;
+  background-color: #333;
+  color: white;
+  font-size: 16px;
+  height: 42px;
+  width: 180px;
+  box-sizing: border-box;
+}
+
+#sortDropdown {
+  display: inline-flex;
+  align-items: center;
+}
+
+#sortDropdown select {
+  background-color: #1db954;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+
+  height: 42px;
+  min-width: 180px;
+  transition: background-color 0.3s;
+}
+
+#sortDropdown select:hover {
+  background-color: #1ed760;
+}
+
+.playlist-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding-top: 15px;
+}
+
+#cancelCreateButton {
+  background-color: #555;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  height: 42px;
+  min-width: 180px;
+  font-weight: bold;
+}
+#cancelCreateButton:hover {
+  background-color: #666;
+}

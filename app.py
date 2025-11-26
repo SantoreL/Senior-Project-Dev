@@ -6,7 +6,7 @@ import os
 import json
 import re
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.secret_key = secrets.token_hex(32)
 
 # Config file to store credentials
@@ -45,7 +45,7 @@ def get_credentials():
     return None, None
 
 REDIRECT_URI = 'http://127.0.0.1:5000/callback'
-SCOPES = 'user-library-read playlist-read-private playlist-read-collaborative user-read-private user-read-email'
+SCOPES = 'user-library-read playlist-read-private playlist-read-collaborative user-read-private user-read-email playlist-modify-public playlist-modify-private'
 
 # ------------------------------
 # Heuristic license classifier
@@ -173,14 +173,22 @@ def callback():
         'client_id': client_id,
         'client_secret': client_secret
     }
-    
     response = requests.post(token_url, data=token_data)
-    if response.status_code == 200:
-        token_info = response.json()
-        session['access_token'] = token_info['access_token']
-        return redirect('/dashboard')
-    else:
-        return f'Error: {response.text}'
+
+    if response.status_code != 200:
+        return f"Error: {response.text}"
+
+    
+    token_info = response.json()
+    session['access_token'] = token_info['access_token']
+
+    
+    user_data = make_spotify_request("me")
+    if user_data:
+        session["user_id"] = user_data["id"]
+
+    return redirect('/dashboard')
+
 
 @app.route('/dashboard')
 def dashboard():
@@ -200,17 +208,23 @@ def bookmarked():
         return redirect('/')
     return render_template('bookmarked.html')
 
-def make_spotify_request(endpoint, params=None):
+def make_spotify_request(endpoint, method='GET',params=None, json=None): # if no method default is get, changed to accept post
     if 'access_token' not in session:
         return None
     
     headers = {'Authorization': f"Bearer {session['access_token']}"}
     url = f"https://api.spotify.com/v1/{endpoint}"
-    response = requests.get(url, headers=headers, params=params)
+    
+    if method == 'GET':
+        response = requests.get(url, headers=headers, params=params)
+    elif method == 'POST':
+         response = requests.post(url, headers=headers, json=json) 
+    # response = requests.get(url, headers=headers, params=params)
     
     if response.status_code == 200:
         return response.json()
     return None
+
 
 @app.route('/api/check-url')
 def check_url():
@@ -427,6 +441,7 @@ def check_playlist():
                     'name': track['name'],
                     'artist': track['artists'][0]['name'],
                     'license': license_check,
+                    'release_date': album.get('release_date'), # add release date so we can sort 
                     'copyrights': album.get('copyrights', []) if album else []
                 })
         
@@ -491,17 +506,89 @@ def track_details():
         'license': license_check
     })
 
+
+
+# used AI to help debug this part. 
+@app.route('/api/create-playlist', methods=['POST'])
+def create_playlist():
+    if 'access_token' not in session:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    data = request.json
+    name = data.get("name")
+    description = data.get("description", "")
+    public = data.get("public", False)
+
+    url = "https://api.spotify.com/v1/me/playlists"
+    headers = {
+        "Authorization": f"Bearer {session['access_token']}",
+        "Content-Type": "application/json"
+    }
+
+    
+    payload = {
+        "name": name,
+        "description": description,
+        "public": public
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+
+    
+    if response.status_code not in (200, 201):
+        return jsonify({"error": response.text}), response.status_code
+
+    return jsonify(response.json())
+
+
+
+
+@app.route('/api/add-playlist-items', methods=['POST'])
+def add_track():
+    data = request.json  # Get the JSON body
+    track_id = data.get('track_id')  
+    playlist_id = data.get('playlist_id')  
+    
+    if not playlist_id:
+        return jsonify({'error': 'No playlist_id provided'})
+    if not track_id:
+        return jsonify({'error': 'No track_id provided'})
+    
+    uri = f"spotify:track:{track_id}"
+    result = make_spotify_request(
+        f'playlists/{playlist_id}/tracks',
+        method='POST',
+        json={'uris': [uri]}  
+    )
+    return jsonify({'playlist': result})
+    
+# delete from 
+@app.route('/api/delete-playlist-items')
+def remove_track():
+    data = request.json  # Get the JSON body
+    track_id = data.get('track_id') 
+    playlist_id = data.get('playlist_id') 
+    
+    if not playlist_id:
+        return jsonify({'error': 'No playlist_id provided'})
+
+    
+    # remove from their playlist 
+    playlist = make_spotify_request(f'/playlists/{playlist_id}/tracks')
+
+
+
 if __name__ == '__main__':
     print("=" * 60)
-    print("🚀 Spotify Copyright Checker Web App")
+    print("Spotify Copyright Checker Web App")
     print("=" * 60)
-    print("\n✨ NEW: Setup page included!")
+    print("\n NEW: Setup page included!")
     print("   No need to edit the script - configure through the web interface!")
-    print("\n📝 Setup Instructions:")
+    print("\n Setup Instructions:")
     print("1. Open browser to: http://127.0.0.1:5000")
     print("2. Click 'Settings' button")
     print("3. Follow the setup wizard")
-    print("\n⚙️ Make sure to add this redirect URI to Spotify Dashboard:")
+    print("\n Make sure to add this redirect URI to Spotify Dashboard:")
     print("   http://127.0.0.1:5000/callback")
     print("=" * 60)
     print()
