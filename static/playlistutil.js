@@ -79,21 +79,16 @@ function loadMyPlaylists() {
     });
 }
 
-
-
-
 function selectPlaylist(playlistId, playlistName, event) {
   selectedPlaylistId = playlistId;
 
   const items = document.querySelectorAll(".playlist-item");
-  items.forEach(i => i.style.background = "#444");
+  items.forEach((i) => (i.style.background = "#444"));
 
   if (event?.currentTarget) {
     event.currentTarget.style.background = "#1DB954";
   }
 }
-
-
 function checkCopyright() {
   const type = document.getElementById("checkType").value;
   const input = document.getElementById("urlInput").value;
@@ -124,11 +119,6 @@ function checkCopyright() {
   fetch(url)
     .then((response) => response.json())
     .then((data) => {
-      console.log("FULL RESPONSE:", data);
-      console.log("TRACKS RETURNED:", data.tracks);
-
-      trackList = data.tracks; //for tracklist
-
       document.getElementById("loading").style.display = "none";
       document.getElementById("results").style.display = "block";
 
@@ -142,55 +132,56 @@ function checkCopyright() {
       document.getElementById("resultsTitle").textContent =
         data.title || `Found ${data.tracks.length} tracks`;
 
-      let html = "";
-      data.tracks.forEach((track) => {
-        html += `
-                            <div class="track" onclick="openTrackDetails('${
-                              track.id
-                            }')">
-                                <div class="track-name">${track.name}</div>
-                                <button onclick="event.stopPropagation(); addTrack('${
-                                  track.id
-                                }')" style="margin-left: auto; background-color: transparent; border: none; cursor: pointer; padding: 8px;">
-                                <i class="fas fa-bookmark" style="color: white; font-size: 24px;"></i>
-                                </button>
-
-
-                                <div class="track-artist">${track.artist}</div>
-                                <div style="display:flex; gap:10px; align-items:center; margin-top:8px; flex-wrap: wrap;">
-                                    <span class="license-badge ${
-                                      track.license?.is_free
-                                        ? "license-ok"
-                                        : "license-bad"
-                                    }">
-                                        ${
-                                          track.license?.is_free
-                                            ? "✓ Copyright-free (heuristic)"
-                                            : "✕ Likely copyrighted"
-                                        }
-                                    </span>
-                                    <span style="font-size:12px; color:#aaa;">Conf: ${
-                                      track.license?.confidence ?? 0
-                                    }</span>
-                                </div>
-                                <div class="copyright">
-                                    ${
-                                      track.copyrights.length > 0
-                                        ? track.copyrights
-                                            .map((c) => `${c.type}: ${c.text}`)
-                                            .join("<br>")
-                                        : "⚠️ No copyright information found"
-                                    }
-                                </div>
-                            </div>
-                        `;
-      });
-      document.getElementById("trackList").innerHTML = html;
+      trackList = data.tracks;
+      renderTrackList(data.tracks);
     })
     .catch((error) => {
       document.getElementById("loading").style.display = "none";
       alert("Error: " + error);
     });
+}
+
+function renderTrackList(trackList) {
+  let html = "";
+  trackList.forEach((track) => {
+    html += `
+      <div class="track" onclick="openTrackDetails('${track.id}')">
+          <div class="track-name">${track.name}</div>
+          <div class="track-artist">${track.artist}</div>
+          <div style="display:flex; gap:10px; align-items:center; margin-top:8px; flex-wrap: wrap;">
+              <span class="license-badge ${
+                track.license?.status === "unsure"
+                  ? "license-unsure"
+                  : track.license?.is_free
+                  ? "license-ok"
+                  : "license-bad"
+              }">
+                  ${
+                    track.license?.status === "unsure"
+                      ? "? Unsure"
+                      : track.license?.is_free
+                      ? " ✓ Copyright-free (heuristic)"
+                      : " ✕ Likely copyrighted"
+                  }
+              </span>
+              <span style="font-size:12px; color:#aaa;">Conf: ${
+                track.license?.confidence ?? 0
+              }</span>
+          </div>
+          <div class="copyright">
+              ${
+                track.copyrights.length > 0
+                  ? track.copyrights
+                      .map((c) => `${c.type}: ${c.text}`)
+                      .join("<br>")
+                  : " No copyright information found"
+              }
+          </div>
+      </div>
+    `;
+  });
+
+  document.getElementById("trackList").innerHTML = html;
 }
 
 // Initialize on load

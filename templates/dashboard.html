@@ -35,7 +35,11 @@
           id="urlInput"
           placeholder="Paste Spotify URL or search query"
         />
-        <div id="playlistSelect" class="playlist-list" style="max-height: 400px;"></div>
+        <div
+          id="playlistSelect"
+          class="playlist-list"
+          style="max-height: 400px"
+        ></div>
       </div>
       <div id="rangeInputs" style="display: none; gap: 10px">
         <input
@@ -174,7 +178,6 @@
       }
 
       let playlistList = []; // stores playlists
-    
 
       function loadMyPlaylists() {
         document.getElementById("loading").style.display = "block";
@@ -190,8 +193,8 @@
               return;
             }
 
-             playlistList = data.playlists; // save 
-             
+            playlistList = data.playlists; // save
+
             const playlistSelect = document.getElementById("playlistSelect");
             playlistSelect.style.display = "block";
 
@@ -286,20 +289,20 @@
                                 <div class="track-name">${track.name}</div>
                                 <button onclick="event.stopPropagation(); addTrack('${
                                   track.id
-                                }')" style="margin-left: auto; background-color: transparent; border: none; cursor: pointer; padding: 8px;">
-                                <i class="fas fa-bookmark" style="color: white; font-size: 24px;"></i>
-                                </button>
-
-
+                                }')" style="margin-left: auto; background-color: transparent; border: none; cursor: pointer; padding: 8px;"> <i class="fas fa-bookmark" style="color: white; font-size: 24px;"></i> </button>
                                 <div class="track-artist">${track.artist}</div>
                                 <div style="display:flex; gap:10px; align-items:center; margin-top:8px; flex-wrap: wrap;">
                                     <span class="license-badge ${
-                                      track.license?.is_free
+                                      track.license?.status === "unsure"
+                                        ? "license-unsure"
+                                        : track.license?.is_free
                                         ? "license-ok"
                                         : "license-bad"
                                     }">
                                         ${
-                                          track.license?.is_free
+                                          track.license?.status === "unsure"
+                                            ? "? Unsure"
+                                            : track.license?.is_free
                                             ? "✓ Copyright-free (heuristic)"
                                             : "✕ Likely copyrighted"
                                         }
@@ -314,7 +317,7 @@
                                         ? track.copyrights
                                             .map((c) => `${c.type}: ${c.text}`)
                                             .join("<br>")
-                                        : "⚠️ No copyright information found"
+                                        : "No copyright information found"
                                     }
                                 </div>
                             </div>
@@ -328,6 +331,7 @@
           });
       }
 
+     
       // Initialize on load
       handleTypeChange();
 

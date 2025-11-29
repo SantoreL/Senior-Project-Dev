@@ -21,7 +21,6 @@ body {
 .header-buttons {
   display: flex;
   gap: 10px;
-  
 }
 .logout-btn,
 .settings-btn,
@@ -34,7 +33,6 @@ body {
   cursor: pointer;
   font-weight: bold;
   text-decoration: none;
-  
 }
 
 .search-box {
@@ -91,6 +89,7 @@ select {
   color: #aaa;
   margin: 5px 0;
 }
+
 .copyright {
   color: #1db954;
   font-size: 14px;
@@ -113,6 +112,10 @@ select {
 }
 .license-bad {
   background: #a71d2a;
+  color: #fff;
+}
+.license-unsure {
+  background: #856404;
   color: #fff;
 }
 .track {

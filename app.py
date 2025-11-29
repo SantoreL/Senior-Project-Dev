@@ -46,31 +46,65 @@ def get_credentials():
 
 REDIRECT_URI = 'http://127.0.0.1:5000/callback'
 SCOPES = 'user-library-read playlist-read-private playlist-read-collaborative user-read-private user-read-email playlist-modify-public playlist-modify-private'
-
 # ------------------------------
 # Heuristic license classifier
 # ------------------------------
+# Positive keywords - push heuristic in positive direction (no individual weights needed)
 POSITIVE_LICENSE_KEYWORDS = [
-    'royalty free', 'royalty-free', 'free to use', 'free use', 'creative commons',
-    'cc0', 'cc 0', 'public domain', 'no copyright', 'copyright free',
-    'free for commercial', 'free for monetization', 'youtube safe', 'license free',
-    'ncs', 'nocopyrightsounds', 'chillhop records', 'chillhop music', 'copyright-free'
+    'public domain', 'cc0', 'cc 0', 'no copyright', 'copyright free', 'copyright-free',
+    'creative commons', 'free for commercial', 'free for monetization', 'youtube safe',
+    'royalty free', 'royalty-free', 'free to use', 'free use', 'license free'
 ]
 
+# Negative keywords - push heuristic in negative direction (no individual weights needed)
 NEGATIVE_LICENSE_KEYWORDS = [
-    '©', '℗', '(c) ', '(p) ', 'all rights reserved', 'under exclusive license',
-    'exclusive license', 'licensed to', 'unauthorized', 'broadcast prohibited',
-    'for promotional use only', 'not for resale', 'umg', 'universal music', 'sony',
-    'warner', 'wmg', 'wmg', 'smE', 'sony music entertainment', 'wmg', 'atlantic records',
-    'columbia records', 'rca records', 'def jam', 'republic records', 'interscope'
+    'all rights reserved', 'under exclusive license', 'exclusive license', 'unauthorized',
+    'broadcast prohibited', 'for promotional use only', 'not for resale', 'licensed to',
+    'universal music', 'sony music entertainment', 'umg', 'warner', 'wmg', 'sony',
+    'atlantic records', 'columbia records', 'rca records', 'def jam', 'republic records',
+    'interscope', 'ltc', 'sme'
 ]
 
-# Labels/brands that usually publish copyright-free music (heuristic; user-driven)
+# Labels/brands that usually publish copyright-free music with confidence weights
 POSITIVE_LABELS = {
-    'ncs',
-    'nocopyrightsounds',
-    'chillhop records',
-    'chillhop music'
+    'ncs': 0.25,
+    'nocopyrightsounds': 0.25,
+    'chillhop records': 0.20,
+    'chillhop music': 0.20,
+    'audio library': 0.18,
+    'epidemic sound free': 0.18,
+    'streambeats': 0.18,
+    'infraction': 0.18,
+
+}
+
+# Bad labels that indicate copyrighted content with confidence weights
+BAD_LABELS = {
+    # Very strong indicators
+    '©': 0.20,
+    '℗': 0.20,
+    '(c)': 0.18,
+    '(p)': 0.18,
+    '(c) ': 0.18,
+    '(p) ': 0.18,
+    
+    # Strong indicators
+    'music publishing': 0.15,
+    'rights reserved': 0.15,
+    'copyrighted': 0.15,
+    'copyright': 0.15,
+    'copyrighted': 0.15,
+    'rights mangement': 0.15,
+    'warner': 0.12,
+    'Warner': 0.12,
+    'sony': 0.12,
+    'Sony': 0.12,
+    
+    # Medium indicators
+    'records': 0.10,
+    'llc': 0.10,
+    'production': 0.10,
+
 }
 
 def _normalize_text(value):
@@ -80,46 +114,134 @@ def _normalize_text(value):
         return ' '.join(_normalize_text(v) for v in value)
     return str(value).lower()
 
-def classify_license_from_metadata(*texts):
-    """Simple keyword-based check. Returns dict with is_free, confidence, signals, reason."""
+def classify_license_from_metadata(*texts, release_date=None, label=None):
+    """Keyword-based check with labels as definitive indicators. Returns dict with is_free, confidence, signals, reason, status."""
     blob = _normalize_text(list(texts))
+    
+    # Find positive keywords (simple list matching - no weights)
     positives = [kw for kw in POSITIVE_LICENSE_KEYWORDS if kw in blob]
+    
+    # Find negative keywords (simple list matching - no weights)
     negatives = [kw for kw in NEGATIVE_LICENSE_KEYWORDS if kw in blob]
 
-    # Special handling: if a positive label appears anywhere, treat as strong positive
-    positive_label_hit = any(lbl in blob for lbl in POSITIVE_LABELS)
+    # Check for bad labels in the label field and copyright symbols in the blob
+    # Bad labels are definitive indicators with weights
+    bad_label_hits = {}
+    if label:
+        label_normalized = _normalize_text(label)
+        # Check all bad labels in the label field
+        for bad_lbl, weight in BAD_LABELS.items():
+            if bad_lbl in label_normalized and bad_lbl not in bad_label_hits:
+                bad_label_hits[bad_lbl] = weight
+    # Also check for copyright symbols in the blob (they can appear in copyright text)
+    for bad_lbl in ['©', '℗', '(c)', '(p)', '(c) ', '(p) ']:
+        if bad_lbl in blob and bad_lbl not in bad_label_hits:
+            bad_label_hits[bad_lbl] = BAD_LABELS.get(bad_lbl, 0.15)
+    bad_label_list = list(bad_label_hits.keys())
+    bad_label_score = sum(bad_label_hits.values())
 
-    # Scoring: negatives weigh 1 normally, but if a positive label is present, negatives weigh 0.5
-    negative_weight = 0.5 if positive_label_hit else 1.0
-    score = len(positives) - (negative_weight * len(negatives))
-    is_free = score > 0 or positive_label_hit
+    # Check for positive labels - these are DEFINITIVE indicators with weights
+    positive_label_hits = {}
+    for lbl, weight in POSITIVE_LABELS.items():
+        if lbl in blob:
+            positive_label_hits[lbl] = weight
+    positive_label_list = list(positive_label_hits.keys())
+    positive_label_score = sum(positive_label_hits.values())
+    positive_label_hit = len(positive_label_list) > 0
 
-    # Confidence heuristic (rebased):
-    # - Strong when positive label hit
-    # - Medium when clear positives present without many negatives
-    # - Low-medium when no signals
-    total_signals = len(positives) + len(negatives)
-    if positive_label_hit:
-        confidence = 0.9 if is_free else 0.7
-    elif total_signals == 0:
+    # Check if release date is before 1923 (public domain in US)
+    is_public_domain = False
+    if release_date:
+        try:
+            # Extract year from release_date (format can be YYYY, YYYY-MM-DD, etc.)
+            year_str = str(release_date).split('-')[0]
+            year = int(year_str)
+            if year < 1923:
+                is_public_domain = True
+        except (ValueError, AttributeError):
+            pass
+
+    # Keywords push the score in a direction (simple count-based)
+    # Labels are definitive and override keyword-based scoring
+    keyword_score = len(positives) - len(negatives)
+    
+    # If public domain, override to free
+    if is_public_domain:
+        is_free = True
+    elif positive_label_hit:
+        # Positive labels are definitive - they mean free
+        is_free = True
+    elif bad_label_score > 0.15:
+        # Strong bad label indicators are definitive - they mean copyrighted
+        is_free = False
+    else:
+        # Use keyword score to determine direction
+        is_free = keyword_score > 0
+
+    # Confidence calculation:
+    # - Labels are DEFINITIVE indicators (high confidence)
+    # - Keywords push confidence but don't give definitive answers
+    # - Public domain gets highest confidence
+    if is_public_domain:
+        confidence = 0.95
+    elif positive_label_hit:
+        # Positive labels are definitive - high confidence
+        confidence = 0.75 + min(0.20, positive_label_score)
+        confidence = min(0.95, confidence)
+    elif bad_label_score > 0.15:
+        # Strong bad label indicators are definitive - high confidence in copyrighted
+        confidence = 0.70 + min(0.20, bad_label_score)
+        confidence = min(0.90, confidence)
+    elif len(positives) == 0 and len(negatives) == 0 and len(bad_label_list) == 0:
+        # No signals at all
         confidence = 0.4
     else:
-        base = 0.55 + 0.08 * (len(positives)) - 0.05 * (len(negatives))
-        confidence = max(0.35, min(0.9, base))
+        # Keywords push confidence but aren't definitive
+        # Base confidence starts at 0.5
+        base = 0.50
+        
+        # Keywords push in their direction (but not too strongly)
+        if keyword_score > 0:
+            base += min(0.15, keyword_score * 0.05)  # Max +0.15 for many positive keywords
+        elif keyword_score < 0:
+            base -= min(0.15, abs(keyword_score) * 0.05)  # Max -0.15 for many negative keywords
+        
+        # Bad labels (weak ones) also push confidence down
+        if bad_label_score > 0:
+            base -= min(0.10, bad_label_score)
+        
+        confidence = max(0.35, min(0.70, base))  # Cap at 0.70 for keyword-only results
 
-    reason = 'No clear signals detected.' if not (positives or negatives or positive_label_hit) else \
-        f"Signals → positive: {', '.join(positives) if positives else ('label whitelisted' if positive_label_hit else 'none')}; " \
-        f"negative: {', '.join(negatives) if negatives else 'none'}."
+    # Determine status: if confidence is too low, mark as "unsure"
+    # Threshold: confidence < 0.45
+    status = 'unsure' if confidence < 0.45 else ('free' if is_free else 'copyrighted')
+
+    # Build reason string
+    reason_parts = []
+    if is_public_domain:
+        reason_parts.append(f"Public domain (released before 1923: {release_date})")
+    if positives:
+        reason_parts.append(f"positive keywords: {', '.join(positives)}")
+    if positive_label_list:
+        reason_parts.append(f"positive labels: {', '.join(positive_label_list)}")
+    if negatives:
+        reason_parts.append(f"negative keywords: {', '.join(negatives)}")
+    if bad_label_list:
+        reason_parts.append(f"bad label indicators: {', '.join(bad_label_list)}")
+    
+    reason = '; '.join(reason_parts) if reason_parts else 'No clear signals detected.'
 
     return {
         'is_free': bool(is_free),
         'confidence': round(confidence, 2),
+        'status': status,
         'signals': {
-            'positive': positives + (['label match'] if positive_label_hit else []),
-            'negative': negatives
+            'positive': positives + positive_label_list + (['public domain'] if is_public_domain else []),
+            'negative': negatives + bad_label_list
         },
         'reason': reason
     }
+
 
 
 @app.route('/')
